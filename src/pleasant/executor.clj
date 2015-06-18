@@ -1,4 +1,5 @@
 (ns pleasant.executor
+  (:require [pleasant.core :as p])
   (:import
     (java.util.concurrent
       ForkJoinPool ThreadFactory ForkJoinPool$ForkJoinWorkerThreadFactory ForkJoinWorkerThread ForkJoinPool$ManagedBlocker)
@@ -20,6 +21,8 @@
 (def ^ForkJoinPool$ForkJoinWorkerThreadFactory threadfactory
   (let
     [wire (fn [^Thread t]
+            (p/debug t)
+            (p/write-to-file "/tmp/bla.txt" (prn-str t))
             (doto t
               (.setDaemon true)
               (.setUncaughtExceptionHandler uncaught-exception-handler)))]
@@ -29,17 +32,17 @@
         (wire (Thread. r)))
       ForkJoinPool$ForkJoinWorkerThreadFactory
       (^ForkJoinWorkerThread newThread [_ ^ForkJoinPool p]
-        (proxy
-          [ForkJoinWorkerThread Blocking] [p]
-          (block [f]
-            (let [result (volatile! nil)
-                  done (volatile! false)
-                  blocker (reify ForkJoinPool$ManagedBlocker
-                            (block [_] (try (vreset! result (f)) (finally ((vreset! done true) true))))
-                            (isReleasable [_] @done))]
-              (ForkJoinPool/managedBlock blocker) @result)))))))
+        (wire (proxy
+                [ForkJoinWorkerThread Blocking] [p]
+                (block [f]
+                  (let [result (volatile! nil)
+                        done (volatile! false)
+                        blocker (reify ForkJoinPool$ManagedBlocker
+                                  (block [_] (try (vreset! result (f)) (finally (vreset! done true))))
+                                  (isReleasable [_] @done))]
+                    (ForkJoinPool/managedBlock blocker) @result))))))))
 
-(defn default-reporter [^Throwable e] (do (.printStackTrace e) e))
+(defn default-reporter [^Throwable e] (p/error e))
 
 (def default-executor (ForkJoinPool. parallelism threadfactory uncaught-exception-handler true))
 
