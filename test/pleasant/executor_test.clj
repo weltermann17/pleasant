@@ -7,7 +7,7 @@
 (deftest basics
   (testing "Basics"
     (is (not (nil? *executor*)))
-    (is (nil? (log/trace *executor*)))
+    (is (nil? (log/info :warn *executor*)))
     (is (instance? ForkJoinWorkerThread (.newThread threadfactory *executor*)))))
 
 ;; eof

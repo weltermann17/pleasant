@@ -2,8 +2,7 @@
   (:use potemkin)
   (:require
     [clojure.core.typed :refer [ann]]
-    [taoensso.timbre :as logger]
-    [taoensso.timbre.appenders.core :as basic])
+    [clojure.tools.logging :as logger])
   )
 
 (set! *warn-on-reflection* true)
@@ -12,32 +11,19 @@
 
 (import-vars
 
-  [taoensso.timbre trace debug info warn error fatal]
+  [clojure.tools.logging
+   trace debug info warn error fatal
+   spy
+   log-stream]
 
   )
-(def default-config
-  {
 
-   :level          :trace
+;; Necessary to initialize log4j2 disruptor-based logging
+(do
+  (System/setProperty "Log4jContextSelector" "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector")
+  (System/setProperty "AsyncLogger.WaitStrategy" "Block")
+  (System/setProperty "AsyncLogger.RingBufferSize" (str (* 32 1024))))
 
-   :ns-whitelist   []
-   :ns-blacklist   []
-
-   :middleware     []
-
-   :timestamp-opts {:pattern "yyyy-MM-dd'T'HH:mm:ss.SSSX"}
-
-   :output-fn      logger/default-output-fn
-
-   :appenders      {
-                    :console (merge (basic/println-appender) {:async? true})
-                    :logfile (merge (basic/spit-appender) {:fname "/tmp/logging.log"})
-                    :bla     (taoensso.timbre.appenders.carmine/carmine-appender)
-                    }
-
-   })
-
-(logger/set-config! (merge default-config {:level :trace}))
-
+(logger/spy :fatal "hello")
 
 ;; eof
