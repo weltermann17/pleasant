@@ -1,5 +1,5 @@
 (ns pleasant.executor
-  (:require [pleasant.core :as p])
+  (:require [pleasant.logging :as log])
   (:import
     (java.util.concurrent
       ForkJoinPool ThreadFactory ForkJoinPool$ForkJoinWorkerThreadFactory ForkJoinWorkerThread ForkJoinPool$ManagedBlocker)
@@ -21,8 +21,7 @@
 (def ^ForkJoinPool$ForkJoinWorkerThreadFactory threadfactory
   (let
     [wire (fn [^Thread t]
-            (p/debug t)
-            (p/write-to-file "/tmp/bla.txt" (prn-str t))
+            (log/debug t)
             (doto t
               (.setDaemon true)
               (.setUncaughtExceptionHandler uncaught-exception-handler)))]
@@ -42,7 +41,7 @@
                                   (isReleasable [_] @done))]
                     (ForkJoinPool/managedBlock blocker) @result))))))))
 
-(defn default-reporter [^Throwable e] (p/error e))
+(defn default-reporter [^Throwable e] (log/error e))
 
 (def default-executor (ForkJoinPool. parallelism threadfactory uncaught-exception-handler true))
 
@@ -52,6 +51,6 @@
 
 (def ^:dynamic *executor* default-executor)
 
-(def ^:dynamic *blocking* default-blocking)
+;(def ^:dynamic *blocking* default-blocking)
 
 ;; eof
