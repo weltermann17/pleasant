@@ -6,8 +6,6 @@
     (java.lang
       Thread$UncaughtExceptionHandler)))
 
-(set! *warn-on-reflection* true)
-
 (def parallelism (* 2 (.availableProcessors (Runtime/getRuntime))))
 
 (declare ^:dynamic *reporter*)
@@ -51,6 +49,8 @@
 
 (def ^:dynamic *executor* default-executor)
 
-;(def ^:dynamic *blocking* default-blocking)
+(def ^:dynamic *blocking* default-blocking)
+
+(comment *blocking*)
 
 ;; eof

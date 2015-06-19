@@ -5,8 +5,10 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="[%date{HH:mm:ss.SSS}] [%level] [%logger] %msg%n"/>
         </Console>
-        <RollingFile name="RollingFile" fileName="target/logs/logfile.log"
-                     filePattern="target/logs/logfile.log.%d{yyyyMMddHH}-%i" immediateFlush="false">
+        <RollingFile name="RollingFile"
+                     fileName="target/logs/pleasant.log"
+                     filePattern="target/logs/pleasant.log.%d{yyyyMMddHH}-%i"
+                     immediateFlush="false">
             <PatternLayout pattern="[%date{HH:mm:ss.SSS}] [%level] [%logger] %msg%n"/>
             <Policies>
                 <OnStartupTriggeringPolicy/>
