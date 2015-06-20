@@ -26,7 +26,6 @@
 (def ^ForkJoinPool$ForkJoinWorkerThreadFactory threadfactory
   (let
     [wire (fn [^Thread t]
-            (log/debug t)
             (doto t
               (.setDaemon true)
               (.setUncaughtExceptionHandler uncaught-exception-handler)))]
@@ -38,11 +37,12 @@
       (^ForkJoinWorkerThread newThread [_ ^ForkJoinPool p]
         (wire (proxy [ForkJoinWorkerThread] [p]))))))
 
-(def default-executor (ForkJoinPool.
-                        parallelism
-                        threadfactory
-                        uncaught-exception-handler
-                        true))
+(def default-executor
+  (ForkJoinPool.
+    parallelism
+    threadfactory
+    uncaught-exception-handler
+    true))
 
 (def ^:dynamic *executor* default-executor)
 
@@ -57,9 +57,11 @@
 
 (defmulti execute (fn ([_ _] (type *executor*)) ([_] (type *executor*))))
 
+(defmulti execute-blocking (fn ([_ _] (type *executor*)) ([_] (type *executor*))))
+
 (defmethod execute ForkJoinPool
   ([f value]
-    (fn [] (f value)))
+    (execute (fn [] (f value))))
   ([f]
     (let [executor *executor*
           action (recursive-action executor f)]
@@ -69,20 +71,24 @@
 
 (defmethod execute :default
   ([f value]
-    (fn [] (f value)))
+    (execute (fn [] (f value))))
   ([f]
     (let [executor *executor*]
       (.execute ^Executor executor (binding [*executor* executor] (f))))))
 
-(defn execute-all [fs value] (doseq [f fs] (execute f value)))
-
-(defn execute-blocking
-  ([f value] (fn [] (f value)))
+(defmethod execute-blocking ForkJoinPool
+  ([f value] (execute-blocking (fn [] (f value))))
   ([f] (let [executor *executor*
              action (recursive-action executor (fn [] (ForkJoinPool/managedBlock (managed-blocker f))))]
          (if (ForkJoinTask/inForkJoinPool)
            (.fork action)
-           (.execute ^Executor executor action)))))
+           (.execute (cast ForkJoinPool executor) action)))))
+
+(defmethod execute-blocking :default
+  ([f value] (execute (fn [] (f value))))
+  ([f] (execute f)))
+
+(defn execute-all [fs value] (doseq [f fs] (execute f value)))
 
 (comment execute execute-all execute-blocking)
 

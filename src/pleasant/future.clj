@@ -1,8 +1,9 @@
 (ns pleasant.future
-  (:import clojure.lang.IDeref)
-  (:refer-clojure :exclude [future promise])
+  (:import clojure.lang.IDeref
+           [java.util.concurrent Phaser TimeoutException TimeUnit])
+  (:refer-clojure :exclude [await future promise])
   (:require
-    [pleasant.logging :as log]
+    ; [pleasant.logging :as log]
     [pleasant.executor :refer :all]))
 
 ;; protocols
@@ -12,6 +13,7 @@
   (->future [_]))
 
 (defprotocol IFuture
+  (await [_ timeout-in-milliseconds])
   (on-complete [_ f])
   (completed? [_]))
 
@@ -37,6 +39,16 @@
 (deftype Future
   [value callbacks]
   IFuture
+  (await [this timeout-in-milliseconds]
+    (let [phaser (Phaser. 1)]
+      (on-complete this (fn [_] (.arriveAndDeregister phaser)))
+      (try
+        (.awaitAdvanceInterruptibly phaser 0 timeout-in-milliseconds TimeUnit/MILLISECONDS)
+        this
+        (catch TimeoutException _
+          (throw (TimeoutException. (str "Timeout during await after " timeout-in-milliseconds " ms."))))
+        (catch Exception e
+          (throw e)))))
   (on-complete [_ f]
     (let [v @value]
       (if (= v incomplete)
@@ -57,12 +69,16 @@
   (let [value (volatile! incomplete)
         callbacks (volatile! [])
         future (Future. value callbacks)]
-    (log/trace "promise " value)
     (Promise. value callbacks future)))
 
 (defn future-fn [f]
   (let [p (promise)]
-    (execute (fn [] (complete p (f))))
+    (execute (fn [] (complete p (f))))                      ;; todo convert f to Try
+    (->future p)))
+
+(defn blocking-future-fn [f]
+  (let [p (promise)]
+    (execute-blocking (fn [] (complete p (f))))             ;; todo convert f to Try
     (->future p)))
 
 ;; macros
@@ -70,6 +86,9 @@
 (defmacro future [& body]
   `(future-fn (fn [] ~@body)))
 
-(comment completed? on-complete future)
+(defmacro blocking-future [& body]
+  `(blocking-future-fn (fn [] ~@body)))
+
+(comment completed? on-complete future blocking-future)
 
 ;;; eof

@@ -1,7 +1,8 @@
 (ns pleasant.core
   (:require
     [clojure.test :refer [run-tests]]
-    [pleasant.executor-test])
+    [pleasant.executor-test]
+    [pleasant.future-test])
   (:gen-class))
 
 (set! *warn-on-reflection* true)
@@ -15,6 +16,7 @@
 (defn -main
   [& _]
   (run-tests 'pleasant.executor-test)
+  (run-tests 'pleasant.future-test)
   (prn "Good bye."))
 
 (comment (-main) (write-to-file))
