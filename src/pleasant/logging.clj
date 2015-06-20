@@ -1,11 +1,6 @@
 (ns pleasant.logging
   (:use potemkin)
-  (:require
-    [clojure.core.typed :refer [ann]]
-    [clojure.tools.logging])
-  )
-
-(ann ^:no-check potemkin.namespaces/link-vars Object)
+  (:require [clojure.tools.logging]))
 
 (import-vars
 
