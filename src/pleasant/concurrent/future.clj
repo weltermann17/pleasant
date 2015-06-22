@@ -1,10 +1,10 @@
-(ns pleasant.future
+(ns pleasant.concurrent.future
   (:import clojure.lang.IDeref
            [java.util.concurrent Phaser TimeoutException TimeUnit])
   (:refer-clojure :exclude [await future promise])
   (:require
-    ; [pleasant.logging :as log]
-    [pleasant.executor :refer :all]))
+    [pleasant.concurrent.executor :refer :all]
+    [pleasant.monadic.try :refer :all]))
 
 ;; protocols
 
@@ -47,7 +47,7 @@
         this
         (catch TimeoutException _
           (throw (TimeoutException. (str "Timeout during await after " timeout-in-milliseconds " ms."))))
-        (catch Exception e
+        (catch Throwable e
           (throw e)))))
   (on-complete [_ f]
     (let [v @value]
@@ -73,12 +73,12 @@
 
 (defn future-fn [f]
   (let [p (promise)]
-    (execute (fn [] (complete p (f))))                      ;; todo convert f to Try
+    (execute (fn [] (complete p (->try f))))
     (->future p)))
 
 (defn blocking-future-fn [f]
   (let [p (promise)]
-    (execute-blocking (fn [] (complete p (f))))             ;; todo convert f to Try
+    (execute-blocking (fn [] (complete p (->try f))))
     (->future p)))
 
 ;; macros

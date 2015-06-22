@@ -1,4 +1,4 @@
-(ns pleasant.executor
+(ns pleasant.concurrent.executor
   (:import
     (java.lang
       Thread$UncaughtExceptionHandler)
@@ -14,9 +14,9 @@
   (:require
     [pleasant.logging :as log]))
 
-(def ^Long parallelism (* 2 (.availableProcessors (Runtime/getRuntime))))
+;; helpers
 
-(defn default-reporter [^Throwable e] (log/error e))
+(defn default-reporter [^Throwable e] (log/error "reporter :" e))
 
 (def ^:dynamic *reporter* default-reporter)
 
@@ -25,17 +25,19 @@
 
 (def ^ForkJoinPool$ForkJoinWorkerThreadFactory threadfactory
   (let
-    [wire (fn [^Thread t]
+    [init (fn [^Thread t]
             (doto t
               (.setDaemon true)
               (.setUncaughtExceptionHandler uncaught-exception-handler)))]
     (reify
       ThreadFactory
       (^Thread newThread [_ ^Runnable r]
-        (wire (Thread. r)))
+        (init (Thread. r)))
       ForkJoinPool$ForkJoinWorkerThreadFactory
       (^ForkJoinWorkerThread newThread [_ ^ForkJoinPool p]
-        (wire (proxy [ForkJoinWorkerThread] [p]))))))
+        (init (proxy [ForkJoinWorkerThread] [p]))))))
+
+(def ^Long parallelism (* 2 (.availableProcessors (Runtime/getRuntime))))
 
 (def default-executor
   (ForkJoinPool.
@@ -54,6 +56,8 @@
     (reify ForkJoinPool$ManagedBlocker
       (block [_] (try (f) (finally (vreset! done true))) true)
       (isReleasable [_] @done))))
+
+;; execute
 
 (defmulti execute (fn ([_ _] (type *executor*)) ([_] (type *executor*))))
 
@@ -75,6 +79,8 @@
   ([f]
     (let [executor *executor*]
       (.execute ^Executor executor (binding [*executor* executor] (f))))))
+
+;; blocking
 
 (defmethod execute-blocking ForkJoinPool
   ([f value] (execute-blocking (fn [] (f value))))
