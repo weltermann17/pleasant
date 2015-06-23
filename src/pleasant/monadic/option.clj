@@ -1,7 +1,9 @@
 (ns pleasant.monadic.option
-  (:import clojure.lang.IDeref)
+  (:import
+    clojure.lang.IDeref)
   (:refer-clojure :exclude [empty?])
-  (:require [clojure.algo.monads :refer :all]))
+  (:require
+    [clojure.algo.monads :refer :all]))
 
 (defprotocol IOption
   (empty? [_])

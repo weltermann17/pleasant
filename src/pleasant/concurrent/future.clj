@@ -1,8 +1,11 @@
 (ns pleasant.concurrent.future
-  (:import clojure.lang.IDeref
-           [java.util.concurrent Phaser TimeoutException TimeUnit])
+  (:import
+    clojure.lang.IDeref
+    [java.util.concurrent Phaser TimeoutException TimeUnit])
   (:refer-clojure :exclude [await future promise])
   (:require
+    [clojure.core.strint :refer [<<]]
+    [pleasant.util.logging :as log]
     [pleasant.concurrent.executor :refer :all]
     [pleasant.monadic.try :refer :all]))
 
@@ -13,7 +16,9 @@
   (->future [_]))
 
 (defprotocol IFuture
-  (await [_ timeout-in-milliseconds])
+  (await [_ milliseconds])
+  (on-success [_ f])
+  (on-failure [_ f])
   (on-complete [_ f])
   (completed? [_]))
 
@@ -27,7 +32,7 @@
   (complete [_ v]
     (if (= @value incomplete)
       (do (vreset! value v) (execute-all @callbacks v))
-      (throw (IllegalStateException. (str "A promise cannot be completed more than once. value = " value)))))
+      (throw (IllegalStateException. (str (<< "A promise cannot be completed more than once, value = ~{value}"))))))
   (->future [_] future)
   IDeref
   (deref [_] @value)
@@ -39,22 +44,24 @@
 (deftype Future
   [value callbacks]
   IFuture
-  (await [this timeout-in-milliseconds]
+  (await [this milliseconds]
     (let [phaser (Phaser. 1)]
       (on-complete this (fn [_] (.arriveAndDeregister phaser)))
       (try
-        (.awaitAdvanceInterruptibly phaser 0 timeout-in-milliseconds TimeUnit/MILLISECONDS)
+        (.awaitAdvanceInterruptibly phaser 0 milliseconds TimeUnit/MILLISECONDS)
         this
         (catch TimeoutException _
-          (throw (TimeoutException. (str "Timeout during await after " timeout-in-milliseconds " ms."))))
+          (throw (TimeoutException. (<< "Timeout during await after ~{milliseconds} ms."))))
         (catch Throwable e
           (throw e)))))
+  (completed? [_] (not= @value incomplete))
+  (on-success [this f] (on-complete this (fn [v] (when (success? v) (f @v)))))
+  (on-failure [this f] (on-complete this (fn [v] (when (failure? v) (f @v)))))
   (on-complete [_ f]
     (let [v @value]
       (if (= v incomplete)
         (vswap! callbacks conj f)
         (execute f v))))
-  (completed? [_] (not= @value incomplete))
   IDeref
   (deref [_] @value)
   Object
@@ -89,6 +96,6 @@
 (defmacro blocking-future [& body]
   `(blocking-future-fn (fn [] ~@body)))
 
-(comment completed? on-complete future blocking-future)
+(comment completed? on-complete future blocking-future on-success on-failure)
 
 ;;; eof

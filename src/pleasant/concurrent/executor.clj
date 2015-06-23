@@ -12,7 +12,7 @@
       ForkJoinPool$ManagedBlocker
       RecursiveAction))
   (:require
-    [pleasant.logging :as log]))
+    [pleasant.util.logging :as log]))
 
 ;; helpers
 

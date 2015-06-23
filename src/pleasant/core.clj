@@ -7,17 +7,9 @@
 
 (set! *warn-on-reflection* true)
 
-(def write-to-file spit)
-
-(def any? some)
-
-(def abc 3.14)
-
-(defn ^String f [^Number i] (pr-str i))
-
 (defn check-java-version [minimum-versions]
   (let [v (System/getProperty "java.version")]
-    (when-not (any? #(.startsWith v %) minimum-versions)
+    (when (not-any? #(.startsWith v %) minimum-versions)
       (throw (RuntimeException. (str "Invalid Java version. Version found : " v))))))
 
 (defn -main

@@ -1,6 +1,9 @@
-(ns pleasant.logging
-  (:use potemkin)
-  (:require [clojure.tools.logging]))
+(ns pleasant.util.logging
+  (:use
+    potemkin)
+  (:require
+    [clojure.core.strint]
+    [clojure.tools.logging]))
 
 (import-vars
 

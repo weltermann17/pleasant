@@ -3,14 +3,14 @@
     [java.nio.channels
      AsynchronousChannelGroup
      AsynchronousServerSocketChannel
-     AsynchronousSocketChannel
+     ; AsynchronousSocketChannel
      CompletionHandler]
     [java.net
      InetSocketAddress
      StandardSocketOptions])
   (:refer-clojure :exclude [await future promise])
   (:require
-    [pleasant.logging :as log]
+    [pleasant.util.logging :as log]
     [pleasant.monadic.try :refer [failure success]]
     [pleasant.concurrent.executor :refer [*executor*]]
     [pleasant.concurrent.future :refer :all]))

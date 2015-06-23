@@ -1,8 +1,10 @@
 (ns pleasant.monadic.try
-  (:import clojure.lang.IDeref)
+  (:import
+    clojure.lang.IDeref)
   (:refer-clojure :exclude [])
-  (:require [pleasant.logging :as log]
-            [clojure.algo.monads :refer :all]))
+  (:require
+    [pleasant.util.logging :as log]
+    [clojure.algo.monads :refer :all]))
 
 (defprotocol ITry
   (success? [_])

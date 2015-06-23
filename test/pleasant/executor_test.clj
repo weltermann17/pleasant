@@ -1,8 +1,10 @@
 (ns pleasant.executor-test
-  (:require [clojure.test :refer :all]
-            [pleasant.logging :as log]
-            [pleasant.concurrent.executor :refer :all])
-  (:import (java.util.concurrent ForkJoinWorkerThread)))
+  (:require
+    [clojure.test :refer :all]
+    [pleasant.util.logging :as log]
+    [pleasant.concurrent.executor :refer :all])
+  (:import
+    (java.util.concurrent ForkJoinWorkerThread)))
 
 (deftest basics
   (testing "Basics"
