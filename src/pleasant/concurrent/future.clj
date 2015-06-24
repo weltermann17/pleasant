@@ -5,7 +5,7 @@
   (:refer-clojure :exclude [await future promise])
   (:require
     [clojure.core.strint :refer [<<]]
-    [pleasant.util.logging :as log]
+    ;[pleasant.util.logging :as log]
     [pleasant.concurrent.executor :refer :all]
     [pleasant.monadic.try :refer :all]))
 
@@ -16,7 +16,9 @@
   (->future [_]))
 
 (defprotocol IFuture
-  (await [_ milliseconds])
+  (await
+    [_]
+    [_ milliseconds])
   (on-success [_ f])
   (on-failure [_ f])
   (on-complete [_ f])
@@ -44,6 +46,7 @@
 (deftype Future
   [value callbacks]
   IFuture
+  (await [this] (await this 1000000000))
   (await [this milliseconds]
     (let [phaser (Phaser. 1)]
       (on-complete this (fn [_] (.arriveAndDeregister phaser)))
@@ -51,17 +54,15 @@
         (.awaitAdvanceInterruptibly phaser 0 milliseconds TimeUnit/MILLISECONDS)
         this
         (catch TimeoutException _
-          (throw (TimeoutException. (<< "Timeout during await after ~{milliseconds} ms."))))
-        (catch Throwable e
-          (throw e)))))
+          (throw (TimeoutException. (<< "Timeout during await after ~{milliseconds} ms.")))))))
   (completed? [_] (not= @value incomplete))
-  (on-success [this f] (on-complete this (fn [v] (when (success? v) (f @v)))))
-  (on-failure [this f] (on-complete this (fn [v] (when (failure? v) (f @v)))))
   (on-complete [_ f]
     (let [v @value]
       (if (= v incomplete)
         (vswap! callbacks conj f)
         (execute f v))))
+  (on-failure [this f] (on-complete this (fn [v] (when (failure? v) (f @v)))))
+  (on-success [this f] (on-complete this (fn [v] (when (success? v) (f @v)))))
   IDeref
   (deref [_] @value)
   Object
@@ -80,12 +81,12 @@
 
 (defn future-fn [f]
   (let [p (promise)]
-    (execute (fn [] (complete p (->try f))))
+    (execute (fn [] (complete p (try-fn f))))
     (->future p)))
 
 (defn blocking-future-fn [f]
   (let [p (promise)]
-    (execute-blocking (fn [] (complete p (->try f))))
+    (execute-blocking (fn [] (complete p (try-fn f))))
     (->future p)))
 
 ;; macros
@@ -96,6 +97,6 @@
 (defmacro blocking-future [& body]
   `(blocking-future-fn (fn [] ~@body)))
 
-(comment completed? on-complete future blocking-future on-success on-failure)
+(comment completed?)
 
 ;;; eof

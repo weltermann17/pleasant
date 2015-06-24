@@ -16,9 +16,8 @@
   [& _]
   (check-java-version ["1.8" "1.9"])
   (run-tests 'pleasant.executor-test)
-  (run-tests 'pleasant.future-test)
-  (prn "Good bye."))
+  (run-tests 'pleasant.future-test))
 
-(comment (-main) (write-to-file))
+(comment -main)
 
 ;; eof
