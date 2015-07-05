@@ -34,23 +34,11 @@
 
 (defn option [value] (if value (Some. value) None))
 
-(declare option-m)
-
 (defmonad
   option-m
-  [m-zero None
-   m-result (fn [v] (option v))
-   m-bind (fn [mv f] (if (empty? (option mv)) None (f mv)))
-   m-plus (fn [& mvs] (first (drop-while (comp option empty?) mvs)))])
-
-;; tests
-
-(def sequence-maybe-m (maybe-t sequence-m))
-
-(println (domonad sequence-maybe-m [a [nil 1 nil] b [10 20]] (+ a b)))
-
-(with-monad option-m (def ^:private option-+ (m-lift 2 +)))
-
-(println (map (comp #(.toString %) identity) (domonad sequence-m [a [nil 1 nil] b [10 20]] (option-+ a b))))
+  [m-result (fn m-result-option [v] (option v))
+   m-bind (fn m-bind-option [mv f] (if (defined? mv) (f (deref mv)) None))
+   m-plus (fn m-plus-option [& mvs] (first (drop-while (comp empty? option) mvs)))
+   m-zero None])
 
 ;; eof

@@ -37,7 +37,7 @@
       (^ForkJoinWorkerThread newThread [_ ^ForkJoinPool p]
         (init (proxy [ForkJoinWorkerThread] [p]))))))
 
-(def ^Long parallelism (* 2 (.availableProcessors (Runtime/getRuntime))))
+(def ^Long ^:const parallelism (* 2 (.availableProcessors (Runtime/getRuntime))))
 
 (def default-executor
   (ForkJoinPool.

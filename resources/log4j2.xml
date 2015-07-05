@@ -21,7 +21,7 @@
         </Async>
     </Appenders>
     <Loggers>
-        <Root level="trace">
+        <Root level="error">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="AsyncRollingFile"/>
         </Root>

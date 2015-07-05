@@ -8,6 +8,7 @@
   [
    [org.clojure/clojure "1.7.0-RC2"]
    ; [org.clojure/core.typed "0.3.0-alpha5"]
+   [midje "1.7.0-beta1"]
    [org.clojure/algo.monads "0.1.5"]
    [org.clojure/core.incubator "0.1.3"]
    [potemkin "0.3.13"]

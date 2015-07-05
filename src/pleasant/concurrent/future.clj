@@ -5,7 +5,7 @@
   (:refer-clojure :exclude [await future promise])
   (:require
     [clojure.core.strint :refer [<<]]
-    ;[pleasant.util.logging :as log]
+    [pleasant.util.logging :as log]
     [pleasant.concurrent.executor :refer :all]
     [pleasant.monadic.try :refer :all]))
 

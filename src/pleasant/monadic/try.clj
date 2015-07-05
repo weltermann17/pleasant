@@ -3,6 +3,7 @@
     clojure.lang.IDeref)
   (:refer-clojure :exclude [])
   (:require
+    [pleasant.util.fatal :refer :all]
     [pleasant.util.logging :as log]
     [clojure.core.strint :refer [<<]]
     [clojure.algo.monads :refer :all]))
@@ -18,7 +19,7 @@
   IDeref
   (deref [_] value)
   Object
-  (equals [this other] (and (instance? Success other) (= @this @other)))
+  (equals [_ other] (and (instance? Success other) (= value @other)))
   (hashCode [this] (hash @this))
   (toString [this] (comment this) (<< "Success(~{@this})")))
 
@@ -38,27 +39,6 @@
 
 (defn failure [v] (Failure. v))
 
-(defn fatal? [^Throwable e]
-  (some #(instance? % e) [InterruptedException
-                          LinkageError
-                          ThreadDeath
-                          VirtualMachineError]))
-
-(def default-fatal-exception-handler
-  (fn [^Throwable e]
-    (when (fatal? e)
-      (future
-        (do (Thread/sleep 1000)
-            (log/fatal "Fatal exception :" e)
-            (log/fatal "Terminate JVM runtime now.")
-            (future
-              (Thread/sleep 2000)
-              (println "JVM runtime halted.")
-              (.halt (Runtime/getRuntime) 1))
-            (.exit (Runtime/getRuntime) 1))))))
-
-(def ^:dynamic *fatal-exception-handler* default-fatal-exception-handler)
-
 (defn try-fn [f]
   (try
     (success (f))
@@ -70,5 +50,12 @@
      (success (do ~@body))
      (catch Throwable e# (when (fatal? e#) (*fatal-exception-handler* e#))
                          (failure e#))))
+
+(defmonad
+  try-m
+  [m-result (fn m-result-try [v] (->try v))
+   m-bind (fn m-result-try [mv f] (if (success? mv) (f (deref mv)) mv))])
+
+(comment log/info)
 
 ;; eof
