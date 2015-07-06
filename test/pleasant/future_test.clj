@@ -1,4 +1,5 @@
 (ns pleasant.future-test
+  (:import java.util.concurrent.TimeoutException)
   (:refer-clojure :exclude [await future promise])
   (:require
     [clojure.test :refer :all]
@@ -33,7 +34,8 @@
                     (on-failure f #(log/info "the failure is :" (type %)))
                     (on-failure f #(log/debug "the verbose failure is :" %))
                     @(await f 1000))))
-    (is (nil? (Thread/sleep 1000)))
+    (is (instance? TimeoutException (let [f (->future (promise))] @@(await f 0))))
+    (is (nil? (Thread/sleep 0)))
     (is (nil? (log/trace *executor*)))
     ))
 

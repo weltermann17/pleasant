@@ -48,6 +48,8 @@
   (hashCode [this] (hash @this))
   (toString [this] (pr-str @this)))
 
+(declare failed-future)
+
 (deftype Future
   [value callbacks]
   IFuture
@@ -58,8 +60,10 @@
       (try
         (.awaitAdvanceInterruptibly phaser 0 milliseconds TimeUnit/MILLISECONDS)
         this
-        (catch TimeoutException _
-          (throw (TimeoutException. (<< "Timeout during await after ~{milliseconds} ms.")))))))
+        (catch TimeoutException e
+          (failed-future (TimeoutException. (<< "Timeout during await after ~{milliseconds} ms."))))
+        (catch Exception e
+          (failed-future e)))))
   (completed? [_] (not= @value incomplete))
   (on-complete [_ f]
     (let [v @value]
