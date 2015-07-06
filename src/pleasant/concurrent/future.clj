@@ -5,7 +5,8 @@
   (:refer-clojure :exclude [await future promise])
   (:require
     [clojure.core.strint :refer [<<]]
-    [pleasant.util.logging :as log]
+    [clojure.algo.monads :refer :all]
+    ; [pleasant.util.logging :as log]
     [pleasant.concurrent.executor :refer :all]
     [pleasant.monadic.try :refer :all]))
 
@@ -23,6 +24,10 @@
   (on-failure [_ f])
   (on-complete [_ f])
   (completed? [_]))
+
+;;
+
+(comment completed?)
 
 ;; types
 
@@ -46,7 +51,7 @@
 (deftype Future
   [value callbacks]
   IFuture
-  (await [this] (await this 1000000000))
+  (await [this] (await this Long/MAX_VALUE))
   (await [this milliseconds]
     (let [phaser (Phaser. 1)]
       (on-complete this (fn [_] (.arriveAndDeregister phaser)))
@@ -70,7 +75,6 @@
   (hashCode [this] (hash @this))
   (toString [this] (pr-str @this)))
 
-
 ;; functions
 
 (defn promise []
@@ -89,6 +93,16 @@
     (execute-blocking (fn [] (complete p (try-fn f))))
     (->future p)))
 
+(defn- immediate-future [v]
+  (let [p (promise)]
+    (complete p (success v))
+    (->future p)))
+
+(defn- failed-future [v]
+  (let [p (promise)]
+    (complete p (failure v))
+    (->future p)))
+
 ;; macros
 
 (defmacro future [& body]
@@ -97,6 +111,27 @@
 (defmacro blocking-future [& body]
   `(blocking-future-fn (fn [] ~@body)))
 
-(comment completed?)
+(defmacro try-future
+  [& body]
+  `(try
+     ~@body
+     (catch Exception t#
+       (failed-future t#))))
 
-;;; eof
+;; monadic future
+
+(defmonad
+  future-m
+  [m-bind (fn m-bind-future [mv f]
+            (let [p (promise)]
+              (on-complete
+                mv (fn [a]
+                     (if (success? a)
+                       (on-complete (try-future (f (deref a))) (fn [b] (complete p b)))
+                       (complete p a))))
+              (->future p)))
+   m-result (fn m-result-future [v] (immediate-future v))])
+
+;;
+
+;; eof

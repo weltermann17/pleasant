@@ -1,11 +1,10 @@
 (ns pleasant.util.logging
-  (:use
-    potemkin)
   (:require
-    [clojure.core.strint]
-    [clojure.tools.logging]))
+    [clojure.tools.logging]
+    [potemkin]))
 
-(import-vars
+;; creating new aliases
+(potemkin/import-vars
 
   [clojure.tools.logging trace debug info warn error fatal spy log-stream]
 

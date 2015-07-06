@@ -4,7 +4,7 @@
   (:refer-clojure :exclude [])
   (:require
     [pleasant.util.fatal :refer :all]
-    [pleasant.util.logging :as log]
+    ; [pleasant.util.logging :as log]
     [clojure.core.strint :refer [<<]]
     [clojure.algo.monads :refer :all]))
 
@@ -21,7 +21,7 @@
   Object
   (equals [_ other] (and (instance? Success other) (= value @other)))
   (hashCode [this] (hash @this))
-  (toString [this] (comment this) (<< "Success(~{@this})")))
+  (toString [_] (<< "Success(~{value})")))
 
 (deftype Failure [value]
   ITry
@@ -32,7 +32,7 @@
   Object
   (equals [this other] (and (instance? Failure other) (= @this @other)))
   (hashCode [this] (hash @this))
-  (toString [this] (comment this) (<< "Failure(~{@this})")))
+  (toString [_] (<< "Failure(~{(type value})")))
 
 
 (defn success [v] (Success. v))
@@ -53,9 +53,9 @@
 
 (defmonad
   try-m
-  [m-result (fn m-result-try [v] (->try v))
-   m-bind (fn m-result-try [mv f] (if (success? mv) (f (deref mv)) mv))])
-
-(comment log/info)
+  [m-bind (fn m-bind-try [mv f] (if (success? mv) (f @mv) mv))
+   m-result (fn m-result-try [v] (->try v))
+   m-zero (fn m-zero-try [] (Failure. nil))
+   m-plus (fn m-plus-try [& mvs] (let [x (first (drop-while failure? mvs))] (if x x (Failure. nil))))])
 
 ;; eof

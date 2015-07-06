@@ -2,18 +2,18 @@
   (:import
     java.util.NoSuchElementException
     clojure.lang.IDeref)
-  (:refer-clojure :exclude [empty?])
+  (:refer-clojure :exclude [])
   (:require
     [clojure.core.strint :refer [<<]]
     [clojure.algo.monads :refer :all]))
 
 (defprotocol IOption
-  (empty? [_])
+  (undefined? [_])
   (defined? [_]))
 
 (deftype Some [value]
   IOption
-  (empty? [_] false)
+  (undefined? [_] false)
   (defined? [_] true)
   IDeref
   (deref [_] value)
@@ -25,7 +25,7 @@
 (def None
   (reify
     IOption
-    (empty? [_] true)
+    (undefined? [_] true)
     (defined? [_] false)
     IDeref
     (deref [_] (throw (NoSuchElementException. "Cannot deref None.")))
@@ -36,9 +36,11 @@
 
 (defmonad
   option-m
-  [m-result (fn m-result-option [v] (option v))
-   m-bind (fn m-bind-option [mv f] (if (defined? mv) (f (deref mv)) None))
-   m-plus (fn m-plus-option [& mvs] (first (drop-while (comp empty? option) mvs)))
-   m-zero None])
+  [m-bind (fn m-bind-option [mv f] (if (defined? mv) (f @mv) None))
+   m-result (fn m-result-option [v] (option v))
+   m-zero (fn m-zero-option [] None)
+   m-plus (fn m-plus-option [& mvs] (let [x (first (drop-while undefined? mvs))] (if x x None)))])
+
+(comment some none)
 
 ;; eof
