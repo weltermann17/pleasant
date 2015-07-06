@@ -93,12 +93,12 @@
     (execute-blocking (fn [] (complete p (try-fn f))))
     (->future p)))
 
-(defn- immediate-future [v]
+(defn immediate-future [v]
   (let [p (promise)]
     (complete p (success v))
     (->future p)))
 
-(defn- failed-future [v]
+(defn failed-future [v]
   (let [p (promise)]
     (complete p (failure v))
     (->future p)))
@@ -127,11 +127,9 @@
               (on-complete
                 mv (fn [a]
                      (if (success? a)
-                       (on-complete (try-future (f (deref a))) (fn [b] (complete p b)))
+                       (on-complete (try-future (f @a)) (fn [b] (complete p b)))
                        (complete p a))))
               (->future p)))
    m-result (fn m-result-future [v] (immediate-future v))])
-
-;;
 
 ;; eof

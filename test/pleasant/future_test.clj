@@ -53,8 +53,22 @@
                     [x (future (log/trace "inside a future 11") (Thread/sleep 0) 42)
                      y (future (log/trace "inside a future 12") (Thread/sleep 0) (+ x 14))
                      z (future (log/trace "inside a future 13" y) (Thread/sleep 0) (/ y 1))]
-                    (/ z 0))]
+                    (/ z 0))]                               ;; oops
             @(await f))))
+    (is (instance? NullPointerException
+                   (let [f (domonad
+                             future-m
+                             [x (future (log/trace "inside a future 11") (Thread/sleep 0) 42)
+                              y (future (log/trace "inside a future 12") (Thread/sleep 0) (+ x nil)) ;; oops
+                              z (future (log/trace "inside a future 13" y) (Thread/sleep 0) (/ y 1))]
+                             (/ z 8))]
+                     @@(await f))))
+    (with-monad
+      future-m
+      (is (= 31
+             (let [f (->> (map future-fn (repeat 3 (fn [] (Thread/sleep 0) 10)))
+                          (m-reduce + 1))]
+               (do (m-fmap #(is (= 31 %)) f) @@(await f))))))
     (is (nil? (log/trace *executor*)))
     ))
 
