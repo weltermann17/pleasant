@@ -1,7 +1,8 @@
-(ns pleasant.util.logging
-  (:require
-    [clojure.tools.logging]
-    [potemkin]))
+(in-ns 'pleasant.util)
+
+(require
+  '[clojure.tools.logging]
+  '[potemkin])
 
 ;; creating new aliases
 (potemkin/import-vars

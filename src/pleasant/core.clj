@@ -1,7 +1,8 @@
 (ns pleasant.core
+  (:refer-clojure :exclude [await future promise])
   (:require
     [clojure.test :refer [run-tests]]
-    [pleasant.util.fatal :refer :all]
+    [pleasant.util :refer :all]
     [pleasant.executor-test]
     [pleasant.future-test])
   (:gen-class))
@@ -10,9 +11,11 @@
 
 (defn -main
   [& _]
-  (check-java-version ["1.8" "1.9"])
-  (run-tests 'pleasant.executor-test)
-  (run-tests 'pleasant.future-test))
+  (try
+    (require-minimum-java-version "1.8.0_45")
+    (run-tests 'pleasant.executor-test)
+    (run-tests 'pleasant.future-test)
+    (catch Throwable e (*fatal-exception-handler* e))))
 
 (comment -main)
 

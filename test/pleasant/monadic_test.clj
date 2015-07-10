@@ -1,10 +1,10 @@
 (ns pleasant.monadic-test
+  (:refer-clojure :exclude [await future promise])
   (:require
     [clojure.test :refer :all]
     [clojure.algo.monads :refer :all]
     [midje.sweet :refer [fact]]
-    [pleasant.monadic.option :refer :all]
-    [pleasant.monadic.try :refer :all]))
+    [pleasant.monadic :refer :all]))
 
 (with-monad maybe-m (def ^:private maybe-+ (m-lift 2 +)))
 
@@ -44,9 +44,16 @@
       (is (= (m-plus None (option 2))) (->Some 2))
       (is (undefined? (m-plus None None)))
       (is (undefined? (m-plus)))
-      (is (= (m-plus (option nil) (option 2) (option 3)) (->Some 2)))
-      (is (= (apply str (domonad sequence-m [x (map option [1 nil]) y (map option [10 20])] (option-+ x y)))
-             (apply str [(->Some 11) (->Some 21) None None])))
+      (is (= (some-option 2) (first (map (m-lift 1 inc) (option 1)))))
+      (is (undefined? (first (map (m-lift 1 inc) (option nil)))))
+      (is (= [(some-option 4)] (vec (map (m-lift 1 (partial + 3)) (option 1)))))
+      (is (= [(some-option 4)] (vec (map (m-lift 1 #(+ 3 %)) (option 1)))))
+      ;(is (= (some-option 2) (first (for [x (option 1)] (inc x)))))
+      (comment (is (= 7 (first (for [x (option 1) y (option (+ x 2)) z (option (+ y 3))] (inc z)))))
+               (is (= 7 (first (for [x (option 1) y (option 3) z (option (+ y 3))] (inc z)))))
+               (is (= (m-plus (option nil) (option 2) (option 3)) (->Some 2)))
+               (is (= (apply str (domonad sequence-m [x (map option [1 nil]) y (map option [10 20])] (option-+ x y)))
+                      (apply str [(->Some 11) (->Some 21) None None]))))
       ))
   (with-monad
     option-m

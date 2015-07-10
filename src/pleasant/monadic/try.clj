@@ -1,12 +1,13 @@
-(ns pleasant.monadic.try
-  (:import
-    clojure.lang.IDeref)
-  (:refer-clojure :exclude [])
-  (:require
-    [pleasant.util.fatal :refer :all]
-    ; [pleasant.util.logging :as log]
-    [clojure.core.strint :refer [<<]]
-    [clojure.algo.monads :refer :all]))
+(in-ns 'pleasant.monadic)
+
+(import
+  [clojure.lang IDeref Seqable])
+
+(require
+  '[pleasant.util :refer :all]
+  '[clojure.core.strint :refer [<<]]
+  '[clojure.algo.monads :refer :all])
+
 
 (defprotocol ITry
   (success? [_])
@@ -18,6 +19,8 @@
   (failure? [_] false)
   IDeref
   (deref [_] value)
+  Seqable
+  (seq [this] this)
   Object
   (equals [_ other] (and (instance? Success other) (= value @other)))
   (hashCode [this] (hash @this))

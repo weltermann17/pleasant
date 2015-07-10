@@ -1,38 +1,49 @@
-(ns pleasant.monadic.option
-  (:import
-    java.util.NoSuchElementException
-    clojure.lang.IDeref)
-  (:refer-clojure :exclude [])
-  (:require
-    [clojure.core.strint :refer [<<]]
-    [clojure.algo.monads :refer :all]))
+(in-ns 'pleasant.monadic)
+
+(import
+  java.util.NoSuchElementException
+  [clojure.lang IDeref Seqable])
+
+(require
+  '[clojure.core.strint :refer [<<]]
+  '[clojure.algo.monads :refer :all])
 
 (defprotocol IOption
-  (undefined? [_])
-  (defined? [_]))
+  (defined? [_])
+  (undefined? [_]))
 
 (deftype Some [value]
   IOption
-  (undefined? [_] false)
   (defined? [_] true)
+  (undefined? [_] false)
   IDeref
   (deref [_] value)
+  Seqable
+  (seq [this] (cons this nil))
   Object
-  (equals [this other] (and (instance? Some other) (= @this @other)))
-  (hashCode [this] (hash @this))
-  (toString [this] (comment this) (<< "Some(~{@this})")))
+  (equals [_ other] (and (instance? Some other) (= value @other)))
+  (hashCode [_] (hash value))
+  (toString [_] (<< "Some(~{value})")))
 
 (def None
   (reify
     IOption
-    (undefined? [_] true)
     (defined? [_] false)
+    (undefined? [_] true)
     IDeref
     (deref [_] (throw (NoSuchElementException. "Cannot deref None.")))
+    Seqable
+    (seq [this] (cons this nil))
     Object
     (toString [_] "None")))
 
 (defn option [value] (if value (Some. value) None))
+
+(defn some-option [value] (Some. value))
+
+(defn none-option
+  ([] None)
+  ([_] None))
 
 (defmonad
   option-m
@@ -41,6 +52,6 @@
    m-zero (fn m-zero-option [] None)
    m-plus (fn m-plus-option [& mvs] (let [x (first (drop-while undefined? mvs))] (if x x None)))])
 
-(comment some none)
+(comment some-option none-option)
 
 ;; eof

@@ -3,7 +3,7 @@
     [java.nio.channels
      AsynchronousChannelGroup
      AsynchronousServerSocketChannel
-     ; AsynchronousSocketChannel
+     AsynchronousSocketChannel
      CompletionHandler]
     [java.net
      InetSocketAddress
@@ -11,9 +11,9 @@
   (:refer-clojure :exclude [await future promise])
   (:require
     [pleasant.util.logging :as log]
-    [pleasant.monadic.try :refer [failure success]]
-    [pleasant.concurrent.executor :refer [*executor*]]
-    [pleasant.concurrent.future :refer :all]))
+    [pleasant.monadic :refer :all
+     [pleasant.concurrent.executor :refer [*executor*]]
+     [pleasant.concurrent.future :refer :all]))
 
 (def default-channel-group
   (AsynchronousChannelGroup/withThreadPool *executor*))

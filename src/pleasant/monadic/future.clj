@@ -1,14 +1,12 @@
-(ns pleasant.concurrent.future
-  (:import
-    clojure.lang.IDeref
-    [java.util.concurrent Phaser TimeoutException TimeUnit])
-  (:refer-clojure :exclude [await future promise])
-  (:require
-    [clojure.core.strint :refer [<<]]
-    [clojure.algo.monads :refer :all]
-    ; [pleasant.util.logging :as log]
-    [pleasant.concurrent.executor :refer :all]
-    [pleasant.monadic.try :refer :all]))
+(in-ns 'pleasant.monadic)
+
+(import
+  [clojure.lang IDeref ISeq PersistentList]
+  [java.util.concurrent Phaser TimeoutException TimeUnit])
+
+(require
+  '[clojure.core.strint :refer [<<]]
+  '[clojure.algo.monads :refer :all])
 
 ;; protocols
 
@@ -27,7 +25,7 @@
 
 ;;
 
-(comment completed?)
+(comment completed? map)
 
 ;; types
 
@@ -39,7 +37,7 @@
   (complete [_ v]
     (if (= @value incomplete)
       (do (vreset! value v) (execute-all @callbacks v))
-      (throw (IllegalStateException. (str (<< "A promise cannot be completed more than once, value = ~{value}"))))))
+      (throw (IllegalStateException. (str (<< "A promise cannot be completed more than once, value = ~{value}, not accepted value = ~{v}"))))))
   (->future [_] future)
   IDeref
   (deref [_] @value)
@@ -48,12 +46,18 @@
   (hashCode [this] (hash @this))
   (toString [this] (pr-str @this)))
 
-(declare failed-future)
+(def ^:const default-await-timeout Long/MAX_VALUE)
+
+(def ^:dynamic *await-timeout* default-await-timeout)
+
+(declare failed-future future-m)
+
+(prefer-method print-method IDeref ISeq)
 
 (deftype Future
   [value callbacks]
   IFuture
-  (await [this] (await this Long/MAX_VALUE))
+  (await [this] (await this *await-timeout*))
   (await [this milliseconds]
     (let [phaser (Phaser. 1)]
       (on-complete this (fn [_] (.arriveAndDeregister phaser)))
@@ -74,8 +78,18 @@
   (on-success [this f] (on-complete this (fn [v] (when (success? v) (f @v)))))
   IDeref
   (deref [_] @value)
+  ISeq
+  (next [_] nil)
+  ;  (first [this] (let [r @@(await this)] (prn :first r) r))  ;; haha
+  (first [this] (with-monad future-m (prn this) (prn (m-join this)) (m-join this)))
+  (more [this] (let [n (next this)] (if n n (empty this))))
+  (cons [_ obj] (prn :cons obj))
+  (count [_] (prn :count))
+  (empty [_] PersistentList/EMPTY)
+  (equiv [this other] (and (instance? Future other) (= @this @other)))
+  (seq [this] this)
   Object
-  (equals [this other] (and (instance? Promise other) (= @this @other)))
+  (equals [this other] (and (instance? Future other) (= @this @other)))
   (hashCode [this] (hash @this))
   (toString [this] (pr-str @this)))
 
@@ -84,8 +98,8 @@
 (defn promise []
   (let [value (volatile! incomplete)
         callbacks (volatile! [])
-        future (Future. value callbacks)]
-    (Promise. value callbacks future)))
+        future (->Future value callbacks)]
+    (->Promise value callbacks future)))
 
 (defn future-fn [f]
   (let [p (promise)]
@@ -134,6 +148,8 @@
                        (on-complete (try-future (f @a)) (fn [b] (complete p b)))
                        (complete p a))))
               (->future p)))
-   m-result (fn m-result-future [v] (immediate-future v))])
+   m-result (fn m-result-future [v] (immediate-future v))
+   m-zero (fn m-zero-future [] (throw (NoSuchMethodError. "zero")))
+   m-plus (fn m-plus-future [& _] (throw (NoSuchMethodError. "plus")))])
 
 ;; eof

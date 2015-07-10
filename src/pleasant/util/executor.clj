@@ -1,22 +1,24 @@
-(ns pleasant.concurrent.executor
-  (:import
-    (java.lang
-      Thread$UncaughtExceptionHandler)
-    (java.util.concurrent
-      Executor
-      ForkJoinPool
-      ThreadFactory
-      ForkJoinPool$ForkJoinWorkerThreadFactory
-      ForkJoinTask
-      ForkJoinWorkerThread
-      ForkJoinPool$ManagedBlocker
-      RecursiveAction))
-  (:require
-    [pleasant.util.logging :as log]))
+(in-ns 'pleasant.util)
+
+(import
+  (java.lang
+    Thread$UncaughtExceptionHandler)
+  (java.util.concurrent
+    Executor
+    ForkJoinPool
+    ThreadFactory
+    ForkJoinPool$ForkJoinWorkerThreadFactory
+    ForkJoinTask
+    ForkJoinWorkerThread
+    ForkJoinPool$ManagedBlocker
+    RecursiveAction))
+
+(require
+  '[pleasant.util :refer :all])
 
 ;; helpers
 
-(defn default-reporter [^Throwable e] (log/error "reporter :" e))
+(defn default-reporter [^Throwable e] (error "reporter :" e))
 
 (def ^:dynamic *reporter* default-reporter)
 
