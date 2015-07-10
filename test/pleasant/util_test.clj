@@ -4,7 +4,7 @@
     [pleasant.util :refer :all]))
 
 (deftest util
-  (testing "Fatal error tests"
+  (testing "Check java versions"
     (is (true? (>=-java-version "1.7.0" "1.7.0")))
     (is (true? (>=-java-version "1.7.3" "1.7.2")))
     (is (true? (>=-java-version "1.8.0" "1.7.9")))

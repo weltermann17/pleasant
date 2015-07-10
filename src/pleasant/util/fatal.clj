@@ -5,7 +5,7 @@
   '[clojure.core.strint :refer [<<]])
 
 (defn >=-java-version [a b]
-  "Funny how difficult such things are even in this language."
+  "Funny how difficult such things are even in this language. Example: 1.8.0_45 > 1.7.0_75"
   (let
     [split-v (fn [v] (let [s (split v (re-pattern "\\."))] (flatten (map #(split % (re-pattern "_")) s))))
      a' (split-v a)
@@ -18,7 +18,7 @@
 (defn require-minimum-java-version [minimum-v]
   (let [v (System/getProperty "java.version")]
     (when-not (>=-java-version v minimum-v)
-      (let [msg (str (<< "Invalid Java version. Version found : ~{v}, minimum version required : ~{minimum-v}"))]
+      (let [msg (str (<< "Invalid Java version. \nVersion found : ~{v}, minimum version required : ~{minimum-v}"))]
         (fatal msg)
         (throw (VirtualMachineError. msg))))))
 

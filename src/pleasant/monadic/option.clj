@@ -12,7 +12,7 @@
   (defined? [_])
   (undefined? [_]))
 
-(deftype Some [value]
+(deftype ^:private Some [value]
   IOption
   (defined? [_] true)
   (undefined? [_] false)
@@ -37,13 +37,7 @@
     Object
     (toString [_] "None")))
 
-(defn option [value] (if value (Some. value) None))
-
-(defn some-option [value] (Some. value))
-
-(defn none-option
-  ([] None)
-  ([_] None))
+(defn option [value] (if value (->Some value) None))
 
 (defmonad
   option-m
@@ -51,7 +45,5 @@
    m-result (fn m-result-option [v] (option v))
    m-zero (fn m-zero-option [] None)
    m-plus (fn m-plus-option [& mvs] (let [x (first (drop-while undefined? mvs))] (if x x None)))])
-
-(comment some-option none-option)
 
 ;; eof

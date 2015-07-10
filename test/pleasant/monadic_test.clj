@@ -32,28 +32,28 @@
       (is (undefined? (option nil)))
       (is (defined? (option 42)))
       (is (= 42 @(option 42)))
-      (is (= None None))
-      (is (= None (option nil)))
+      (is (= (option nil) (option nil)))
       (is (= (option 42) (->Some 42)))
-      (is (not= (option 42) (->Some 43)))
-      (is (not= None (->Some 43)))
-      (is (not= (->Some 43) None))
+      (is (not= (option 42) (option 43)))
       (is (= (option "hi!")))
-      (is (= (m-plus (option 1) (option 2))) (->Some 1))
-      (is (= (m-plus (option 1) None (option 3))) (->Some 1))
-      (is (= (m-plus None (option 2))) (->Some 2))
+      (is (= @(m-plus (option 1) (option 2))) 1)
+      (is (= @(m-plus (option 1) None (option 3))) 1)
+      (is (= @(m-plus (option nil) (option 2))) 2)
       (is (undefined? (m-plus None None)))
       (is (undefined? (m-plus)))
-      (is (= (some-option 2) (first (map (m-lift 1 inc) (option 1)))))
+      (is (= (option 2) (first (map (m-lift 1 inc) (option 1)))))
       (is (undefined? (first (map (m-lift 1 inc) (option nil)))))
-      (is (= [(some-option 4)] (vec (map (m-lift 1 (partial + 3)) (option 1)))))
-      (is (= [(some-option 4)] (vec (map (m-lift 1 #(+ 3 %)) (option 1)))))
-      ;(is (= (some-option 2) (first (for [x (option 1)] (inc x)))))
-      (comment (is (= 7 (first (for [x (option 1) y (option (+ x 2)) z (option (+ y 3))] (inc z)))))
-               (is (= 7 (first (for [x (option 1) y (option 3) z (option (+ y 3))] (inc z)))))
-               (is (= (m-plus (option nil) (option 2) (option 3)) (->Some 2)))
-               (is (= (apply str (domonad sequence-m [x (map option [1 nil]) y (map option [10 20])] (option-+ x y)))
-                      (apply str [(->Some 11) (->Some 21) None None]))))
+      (is (= [(option 4)] (vec (map (m-lift 1 (partial + 3)) (option 1)))))
+      (is (= [(option 4)] (vec (map (m-lift 1 #(+ 3 %)) (option 1)))))
+      (is (= (option 2) (first (for [x (option 1)] ((m-lift 1 inc) x)))))
+      (let [+ (m-lift 2 clojure.core/+)
+            inc (m-lift 1 clojure.core/inc)]
+        (is (= (option 7) (first (for [x (option 1) y (+ x (option 2)) z (+ y (option 3))] (inc z)))))
+        (is (undefined? (first (for [x (option 1) y (+ x (option 2)) z (+ y None)] (inc z)))))
+        )
+      (is (= (m-plus (option nil) (option 2) (option 3)) (->Some 2)))
+      (is (= (apply str (domonad sequence-m [x (map option [1 nil]) y (map option [10 20])] (option-+ x y)))
+             (apply str [(->Some 11) (->Some 21) None None])))
       ))
   (with-monad
     option-m
@@ -86,6 +86,26 @@
       (is (= (m-plus (->try (/ 1 0)) (->try (/ 2 1)))
              (success 2)))
       (is (failure? (m-plus (->try (/ 1 0)) (->try (/ 2 0)))))
+      (is (= (success 2) (first (map (m-lift 1 inc) (success 1)))))
+      (is (failure? (first (map (m-lift 1 inc) (failure nil)))))
+      (let [a (first (map (m-lift 1 #(/ % 0)) (success 1)))] (is (failure? a)))
+      )))
+
+(deftest combine-option-try
+  (let [o-+ (with-monad option-m (m-lift 2 +))
+        t-+ (with-monad try-m (m-lift 2 +))
+        t-inc (with-monad try-m (m-lift 1 inc))]
+    (testing "Combine option with try"
+      (let [r (first (for
+                       [a (option 1)
+                        b (o-+ a (option 2))
+                        c (t-+ (->try @b) (success 3))]
+                       (t-inc c)))] (is (= r (success 7))))
+      (let [r (first (for
+                       [a (option 1)
+                        b (o-+ a None)
+                        c (t-+ (->try @b) (success 3))]
+                       (t-inc c)))] (is (failure? r)))
       )))
 
 ;; eof

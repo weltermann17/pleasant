@@ -1,19 +1,20 @@
-(ns pleasant.aio.server
-  (:import
-    [java.nio.channels
-     AsynchronousChannelGroup
-     AsynchronousServerSocketChannel
-     AsynchronousSocketChannel
-     CompletionHandler]
-    [java.net
-     InetSocketAddress
-     StandardSocketOptions])
-  (:refer-clojure :exclude [await future promise])
-  (:require
-    [pleasant.util.logging :as log]
-    [pleasant.monadic :refer :all
-     [pleasant.concurrent.executor :refer [*executor*]]
-     [pleasant.concurrent.future :refer :all]))
+(in-ns 'pleasant.aio)
+
+(import
+  [java.nio.channels
+   AsynchronousChannelGroup
+   AsynchronousServerSocketChannel
+   ; AsynchronousSocketChannel
+   CompletionHandler]
+  [java.net
+   InetSocketAddress
+   StandardSocketOptions])
+
+(require
+  '[pleasant.util :refer :all]
+  '[pleasant.monadic :refer :all])
+
+;;
 
 (def default-channel-group
   (AsynchronousChannelGroup/withThreadPool *executor*))
@@ -32,10 +33,10 @@
 (def accept-handler
   (reify CompletionHandler
     (^void failed [_ ^Throwable e p]
-      (log/error "failed" e)
+      (error "failed" e)
       (complete p (failure e)))
     (^void completed [_ socket p]
-      (log/trace "completed" socket)
+      (trace "completed" socket)
       (complete p (success socket)))))
 
 (defn accept [^AsynchronousServerSocketChannel server]
@@ -44,6 +45,6 @@
     (->future p)))
 
 (let [s (accept (socket-server 8000))]
-  (on-complete s #(log/info "We have a" @%)))
+  (on-complete s #(info "We have a" @%)))
 
 ;; eof
