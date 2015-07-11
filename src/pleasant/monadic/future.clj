@@ -1,7 +1,7 @@
 (in-ns 'pleasant.monadic)
 
 (import
-  [clojure.lang IDeref ISeq PersistentList]
+  [clojure.lang IDeref Seqable]
   [java.util.concurrent Phaser TimeoutException TimeUnit])
 
 (require
@@ -23,10 +23,6 @@
   (on-complete [_ f])
   (completed? [_]))
 
-;;
-
-(comment completed? map)
-
 ;; types
 
 (def ^:private incomplete ::incomplete)
@@ -41,18 +37,18 @@
   (->future [_] future)
   IDeref
   (deref [_] @value)
+  Seqable
+  (seq [this] (cons this nil))
   Object
-  (equals [this other] (and (instance? Promise other) (= @this @other)))
-  (hashCode [this] (hash @this))
-  (toString [this] (pr-str @this)))
+  (equals [_ other] (and (instance? Promise other) (not= @value incomplete) (= @value @other)))
+  (hashCode [_] (hash @value))
+  (toString [_] (pr-str @value)))
 
 (def ^:const default-await-timeout Long/MAX_VALUE)
 
 (def ^:dynamic *await-timeout* default-await-timeout)
 
-(declare failed-future future-m)
-
-(prefer-method print-method IDeref ISeq)
+(declare failed-future)
 
 (deftype Future
   [value callbacks]
@@ -78,20 +74,12 @@
   (on-success [this f] (on-complete this (fn [v] (when (success? v) (f @v)))))
   IDeref
   (deref [_] @value)
-  ISeq
-  (next [_] nil)
-  ;  (first [this] (let [r @@(await this)] (prn :first r) r))  ;; haha
-  (first [this] (with-monad future-m (prn this) (prn (m-join this)) (m-join this)))
-  (more [this] (let [n (next this)] (if n n (empty this))))
-  (cons [_ obj] (prn :cons obj))
-  (count [_] (prn :count))
-  (empty [_] PersistentList/EMPTY)
-  (equiv [this other] (and (instance? Future other) (= @this @other)))
-  (seq [this] this)
+  Seqable
+  (seq [this] (cons this nil))
   Object
-  (equals [this other] (and (instance? Future other) (= @this @other)))
-  (hashCode [this] (hash @this))
-  (toString [this] (pr-str @this)))
+  (equals [_ other] (and (instance? Future other) (not= @value incomplete) (= @value @other)))
+  (hashCode [_] (hash @value))
+  (toString [_] (pr-str @value)))
 
 ;; functions
 
@@ -151,5 +139,9 @@
    m-result (fn m-result-future [v] (immediate-future v))
    m-zero (fn m-zero-future [] (throw (NoSuchMethodError. "zero")))
    m-plus (fn m-plus-future [& _] (throw (NoSuchMethodError. "plus")))])
+
+;;
+
+(comment completed?)
 
 ;; eof

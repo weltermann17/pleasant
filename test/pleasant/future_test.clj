@@ -69,16 +69,24 @@
       (is (= 31
              (let [f (->> (map future-fn (repeat 3 (fn [] (Thread/sleep 0) 10)))
                           (m-reduce + 1))]
-               (do (m-fmap #(is (= 31 %)) f) @@(await f))))))
-    (comment (let [f-inc (m-lift 1 #((println "in f-inc" %) (inc %)))
-                   f (future (fatal "inside a future 14") (Thread/sleep 0) 42)
-                   r (first f)]
-               (fatal "result" (type r))
-               (prefer-method print-method clojure.lang.IDeref clojure.lang.ISeq)
-               (await r)
-               (prn r)
-               (is (= 43 @@r))))
-    (is (nil? (trace *executor*)))
-    ))
+               (do (m-fmap #(is (= 31 %)) f) @@(await f)))))
+      (let [f-+ (m-lift 2 +)
+            f-inc (m-lift 1 inc)
+            f1 (for [a (future (trace "inside 14") (Thread/sleep 0) 1)
+                     b (f-+ a (future (trace "inside 15") (Thread/sleep 0) 2))
+                     c (f-+ b (future (trace "inside 16") (Thread/sleep 0) 3))]
+                 (f-inc c))
+            r1 (await (first f1))
+            f2 (for [a (future (trace "inside 14") (Thread/sleep 0) 1)
+                     b (f-+ a (future (trace "inside 15") (Thread/sleep 0) "2"))
+                     c (f-+ b (future (trace "inside 16") (Thread/sleep 0) 3))]
+                 (f-inc c))
+            r2 (await (first f2))]
+        (is (success? @r1))
+        (is (= 7 @@r1))
+        (is (failure? @r2))
+        (is (instance? ClassCastException @@r2)))
+      (is (nil? (trace *executor*)))
+      )))
 
 ;; eof
