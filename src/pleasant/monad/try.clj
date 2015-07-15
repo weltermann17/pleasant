@@ -1,4 +1,4 @@
-(in-ns 'pleasant.monadic)
+(in-ns 'pleasant.monad)
 
 (import
   [clojure.lang IDeref Seqable])
@@ -9,8 +9,8 @@
   '[clojure.algo.monads :refer :all])
 
 (defprotocol ITry
-  (success? [_])
-  (failure? [_]))
+  (^Boolean success? [_])
+  (^Boolean failure? [_]))
 
 (deftype Success [value]
   ITry

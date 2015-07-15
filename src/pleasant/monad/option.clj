@@ -1,4 +1,4 @@
-(in-ns 'pleasant.monadic)
+(in-ns 'pleasant.monad)
 
 (import
   java.util.NoSuchElementException
@@ -9,8 +9,8 @@
   '[clojure.algo.monads :refer :all])
 
 (defprotocol IOption
-  (defined? [_])
-  (undefined? [_]))
+  (^Boolean defined? [_])
+  (^Boolean undefined? [_]))
 
 (deftype ^:private Some [value]
   IOption

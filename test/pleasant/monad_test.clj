@@ -1,10 +1,10 @@
-(ns pleasant.monadic-test
+(ns pleasant.monad-test
   (:refer-clojure :exclude [await future promise])
   (:require
     [clojure.test :refer :all]
     [clojure.algo.monads :refer :all]
     [midje.sweet :refer [fact]]
-    [pleasant.monadic :refer :all]))
+    [pleasant.monad :refer :all]))
 
 (with-monad maybe-m (def ^:private maybe-+ (m-lift 2 +)))
 

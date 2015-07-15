@@ -1,4 +1,4 @@
-(in-ns 'pleasant.monadic)
+(in-ns 'pleasant.monad)
 
 (import
   [clojure.lang IDeref Seqable]
@@ -10,9 +10,11 @@
 
 ;; protocols
 
+(declare IFuture)
+
 (defprotocol IPromise
   (complete [_ value])
-  (->future [_]))
+  (^IFuture ->future [_]))
 
 (defprotocol IFuture
   (await
@@ -21,7 +23,7 @@
   (on-success [_ f])
   (on-failure [_ f])
   (on-complete [_ f])
-  (completed? [_]))
+  (^Boolean completed? [_]))
 
 ;; types
 
@@ -83,28 +85,28 @@
 
 ;; functions
 
-(defn promise []
+(defn ^Promise promise []
   (let [value (volatile! incomplete)
         callbacks (volatile! [])
         future (->Future value callbacks)]
     (->Promise value callbacks future)))
 
-(defn future-fn [f]
+(defn ^Future future-fn [f]
   (let [p (promise)]
     (execute (fn [] (complete p (try-fn f))))
     (->future p)))
 
-(defn blocking-future-fn [f]
+(defn ^Future blocking-future-fn [f]
   (let [p (promise)]
     (execute-blocking (fn [] (complete p (try-fn f))))
     (->future p)))
 
-(defn immediate-future [v]
+(defn ^Future immediate-future [v]
   (let [p (promise)]
     (complete p (success v))
     (->future p)))
 
-(defn failed-future [v]
+(defn ^Future failed-future [v]
   (let [p (promise)]
     (complete p (failure v))
     (->future p)))
@@ -136,9 +138,7 @@
                        (on-complete (try-future (f @a)) (fn [b] (complete p b)))
                        (complete p a))))
               (->future p)))
-   m-result (fn m-result-future [v] (immediate-future v))
-   m-zero (fn m-zero-future [] (throw (NoSuchMethodError. "zero")))
-   m-plus (fn m-plus-future [& _] (throw (NoSuchMethodError. "plus")))])
+   m-result (fn m-result-future [v] (immediate-future v))])
 
 ;;
 

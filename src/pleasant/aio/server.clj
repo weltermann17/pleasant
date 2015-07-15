@@ -12,7 +12,7 @@
 
 (require
   '[pleasant.util :refer :all]
-  '[pleasant.monadic :refer :all])
+  '[pleasant.monad :refer :all])
 
 ;;
 
@@ -43,8 +43,5 @@
   (let [p (promise)]
     (.accept server p accept-handler)
     (->future p)))
-
-(let [s (accept (socket-server 8000))]
-  (on-complete s #(info "We have a" @%)))
 
 ;; eof

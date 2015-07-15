@@ -5,7 +5,7 @@
     [clojure.test :refer :all]
     [clojure.algo.monads :refer :all]
     [pleasant.util :refer :all]
-    [pleasant.monadic :refer :all]))
+    [pleasant.monad :refer :all]))
 
 (deftest basics
   (testing "Basics"
@@ -72,20 +72,29 @@
                (do (m-fmap #(is (= 31 %)) f) @@(await f)))))
       (let [f-+ (m-lift 2 +)
             f-inc (m-lift 1 inc)
+            f-dec (m-lift 1 dec)
             f1 (for [a (future (trace "inside 14") (Thread/sleep 0) 1)
                      b (f-+ a (future (trace "inside 15") (Thread/sleep 0) 2))
                      c (f-+ b (future (trace "inside 16") (Thread/sleep 0) 3))]
                  (f-inc c))
             r1 (await (first f1))
-            f2 (for [a (future (trace "inside 14") (Thread/sleep 0) 1)
-                     b (f-+ a (future (trace "inside 15") (Thread/sleep 0) "2"))
-                     c (f-+ b (future (trace "inside 16") (Thread/sleep 0) 3))]
+            f2 (for [a (future (trace "inside 17") (Thread/sleep 0) 1)
+                     b (f-+ a (future (trace "inside 18") (Thread/sleep 0) "2"))
+                     c (f-+ b (future (trace "inside 19") (Thread/sleep 0) 3))]
                  (f-inc c))
             r2 (await (first f2))]
         (is (success? @r1))
         (is (= 7 @@r1))
         (is (failure? @r2))
-        (is (instance? ClassCastException @@r2)))
+        (is (instance? ClassCastException @@r2))
+        (let [m (map f-inc)
+              n (map f-dec)
+              t (take 1)
+              xf (comp n t m)
+              a (future (trace "inside 20") (Thread/sleep 0) 1)
+              r (first (into [] xf a))]
+          (is (success? @r))
+          (is (= 1 @@r))))
       (is (nil? (trace *executor*)))
       )))
 

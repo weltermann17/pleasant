@@ -9,7 +9,6 @@
   (testing "Basics"
     (is (not (nil? *executor*)))
     (is (nil? (trace *executor*)))
-    (is (instance? ForkJoinWorkerThread (.newThread threadfactory *executor*)))
     ))
 
 ;; eof
