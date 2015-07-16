@@ -5,6 +5,7 @@
     Thread$UncaughtExceptionHandler)
   (java.util.concurrent
     Executor
+    ExecutorService
     ForkJoinPool
     ThreadFactory
     ForkJoinPool$ForkJoinWorkerThreadFactory
@@ -14,6 +15,7 @@
     RecursiveAction))
 
 (require
+  '[clojure.algo.monads :refer :all]
   '[pleasant.util :refer :all])
 
 ;; helpers
@@ -99,5 +101,50 @@
 (defn execute-all [fs value] (doseq [f fs] (execute f value)))
 
 (comment execute execute-all execute-blocking)
+
+;; just playing
+
+(defrecord ExecutorConfiguration
+  [parallelism-factor
+   parallelism
+   forkjoin-executor])
+
+(defn default-parallelism-factor [] (domonad reader-m [] 2.0))
+
+(defn default-parallelism []
+  (domonad
+    reader-m
+    [pf (asks :parallelism-factor)
+     p (pf)]
+    (max 2 (int (* p (.availableProcessors (Runtime/getRuntime)))))))
+
+(defn default-forkjoin-executor []
+  (domonad
+    reader-m
+    [p' (asks :parallelism)
+     p (p')]
+    (str "forkjoinpool:p=" p)))
+
+(defn default-executor-configuration []
+  (map->ExecutorConfiguration
+    {:parallelism-factor default-parallelism-factor
+     :parallelism        default-parallelism
+     :forkjoin-executor  default-forkjoin-executor}
+    ))
+
+(defrecord ExecutorContext
+  [^ExecutorService executor])
+
+(defn executor-context []
+  (domonad reader-m
+           [e' (asks :forkjoin-executor)
+            e (e')]
+           (map->ExecutorContext {:executor e})))
+
+(defn test-executor []
+  (domonad reader-m [e (asks :executor)] (println "my-executor : " e)))
+
+
+
 
 ;; eof
