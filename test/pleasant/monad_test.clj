@@ -3,8 +3,10 @@
   (:require
     [clojure.test :refer :all]
     [clojure.algo.monads :refer :all]
-    [midje.sweet :refer [fact]]
-    [pleasant.monad :refer :all]))
+    [pleasant.monad :refer :all]
+    [expectations :refer [expect]]))
+
+(expect "foo" "fooer")
 
 (with-monad maybe-m (def ^:private maybe-+ (m-lift 2 +)))
 

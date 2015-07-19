@@ -7,7 +7,7 @@
 (defn >=-java-version [a b]
   "Funny how difficult such things are even in this language. Example: 1.8.0_45 > 1.7.0_75"
   (let
-    [split-v (fn [v] (let [s (split v (re-pattern "\\."))] (flatten (map #(split % (re-pattern "_")) s))))
+    [split-v (fn [v] (let [s (split v #"\.")] (flatten (map #(split % #"_") s))))
      a' (split-v a)
      b' (split-v b)
      m (min (count a') (count b'))

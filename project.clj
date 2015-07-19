@@ -16,13 +16,16 @@
 
    ;; clojure
    [org.clojure/clojure "1.7.0"]
-   ; [org.clojure/core.typed "0.3.0"] ;; not yet used
    [org.clojure/algo.monads "0.1.5"]
    [org.clojure/core.incubator "0.1.3"]
-   ; [org.clojure/tools.trace "0.7.8"]
-   [midje "1.7.0"]
+   [expectations "2.1.2"]
    [potemkin "0.3.13"]
-   [prismatic/schema "0.4.3"]
+
+   ;; not yet used
+   ; [prismatic/schema "0.4.3"]
+   ; [org.clojure/core.typed "0.3.0"] ;; not yet used
+   ; [org.clojure/tools.trace "0.7.8"]
+   ; [midje "1.7.0"]
    ]
   :main pleasant.core
   :target-path "target/"
